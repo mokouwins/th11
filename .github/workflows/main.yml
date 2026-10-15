@@ -19,12 +19,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Build Dependencies
         run: |
           cd th11_web/launcher
-          npm ci
+          npm install
 
       - name: Compile Playable Web Artifacts
         run: |
