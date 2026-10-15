@@ -24,15 +24,14 @@ jobs:
       - name: Install Build Dependencies
         run: |
           cd th11_web/launcher
-          npm install
+          npm ci
 
       - name: Compile Playable Web Artifacts
         run: |
           cd th11_web/launcher
-          npm run build
+          npm run build:launcher
 
       - name: Prepare Pages artifact
-        # find the actual build output dir (dist / build / out / public / artifacts)
         run: |
           cd th11_web/launcher
           if [ -d dist ]; then SRC=dist
@@ -40,8 +39,9 @@ jobs:
           elif [ -d out ]; then SRC=out
           elif [ -d public ]; then SRC=public
           elif [ -d artifacts ]; then SRC=artifacts
+          elif [ -d package ]; then SRC=package
           else
-            echo "No build output folder found (checked: dist, build, out, public, artifacts)."
+            echo "No build output folder found (checked: dist, build, out, public, artifacts, package)."
             echo "Contents of th11_web/launcher:"
             ls -la
             exit 1
