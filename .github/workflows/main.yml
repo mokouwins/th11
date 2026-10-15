@@ -16,45 +16,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Build Dependencies
+      - name: Verify static site exists
         run: |
-          cd th11_web/launcher
-          npm install
-
-      - name: Compile Playable Web Artifacts
-        run: |
-          cd th11_web/launcher
-          npm run build:launcher
-
-      - name: Prepare Pages artifact
-        run: |
-          cd th11_web/launcher
-          if [ -d dist ]; then SRC=dist
-          elif [ -d build ]; then SRC=build
-          elif [ -d out ]; then SRC=out
-          elif [ -d public ]; then SRC=public
-          elif [ -d artifacts ]; then SRC=artifacts
-          elif [ -d package ]; then SRC=package
-          else
-            echo "No build output folder found (checked: dist, build, out, public, artifacts, package)."
-            echo "Contents of th11_web/launcher:"
-            ls -la
+          if [ ! -f th11_web/launcher/public/index.html ]; then
+            echo "Expected static site at th11_web/launcher/public/index.html but it was not found."
+            ls -la th11_web/launcher
             exit 1
           fi
-          echo "Using build source: $SRC"
-          rm -rf artifacts
-          mkdir -p artifacts
-          cp -a "$SRC/." artifacts/
+          echo "Static site found at th11_web/launcher/public"
 
       - name: Upload Compiled Game Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'th11_web/launcher/artifacts'
+          path: 'th11_web/launcher/public'
 
       - name: Deploy to GitHub Pages
         id: deployment
