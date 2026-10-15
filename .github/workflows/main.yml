@@ -23,18 +23,18 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          cd th11_web
+          cd th11_web/launcher
           npm install
 
       - name: Compile Playable Web Artifacts
         run: |
-          cd th11_web
+          cd th11_web/launcher
           npm run build
 
       - name: Prepare Pages artifact
         # find the actual build output dir (dist / build / out / public / artifacts)
         run: |
-          cd th11_web
+          cd th11_web/launcher
           if [ -d dist ]; then SRC=dist
           elif [ -d build ]; then SRC=build
           elif [ -d out ]; then SRC=out
@@ -42,7 +42,7 @@ jobs:
           elif [ -d artifacts ]; then SRC=artifacts
           else
             echo "No build output folder found (checked: dist, build, out, public, artifacts)."
-            echo "Contents of th11_web:"
+            echo "Contents of th11_web/launcher:"
             ls -la
             exit 1
           fi
@@ -54,7 +54,7 @@ jobs:
       - name: Upload Compiled Game Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'th11_web/artifacts'
+          path: 'th11_web/launcher/artifacts'
 
       - name: Deploy to GitHub Pages
         id: deployment
