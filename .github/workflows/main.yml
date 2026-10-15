@@ -31,6 +31,26 @@ jobs:
           cd th11_web
           npm run build
 
+      - name: Prepare Pages artifact
+        # find the actual build output dir (dist / build / out / public / artifacts)
+        run: |
+          cd th11_web
+          if [ -d dist ]; then SRC=dist
+          elif [ -d build ]; then SRC=build
+          elif [ -d out ]; then SRC=out
+          elif [ -d public ]; then SRC=public
+          elif [ -d artifacts ]; then SRC=artifacts
+          else
+            echo "No build output folder found (checked: dist, build, out, public, artifacts)."
+            echo "Contents of th11_web:"
+            ls -la
+            exit 1
+          fi
+          echo "Using build source: $SRC"
+          rm -rf artifacts
+          mkdir -p artifacts
+          cp -a "$SRC/." artifacts/
+
       - name: Upload Compiled Game Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
