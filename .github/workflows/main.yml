@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Compile and Deploy Touhou 11
 on:
   push:
     branches: [ main ]
@@ -7,20 +7,34 @@ permissions:
   pages: write
   id-token: write
 jobs:
-  deploy:
+  build-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Upload artifact
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Build Dependencies
+        run: |
+          cd th11_web
+          npm install
+
+      - name: Compile Playable Web Artifacts
+        run: |
+          cd th11_web
+          npm run build
+
+      - name: Upload Compiled Game Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'th11_web/tests/browser'
+          path: 'th11_web/artifacts'
 
       - name: Deploy to GitHub Pages
         id: deployment
