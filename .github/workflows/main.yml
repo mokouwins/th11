@@ -16,19 +16,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Verify static site exists
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build release site
         run: |
-          if [ ! -f th11_web/launcher/public/index.html ]; then
-            echo "Expected static site at th11_web/launcher/public/index.html but it was not found."
-            ls -la th11_web/launcher
+          node th11_web/scripts/build-sdl.mjs --release
+          node th11_web/scripts/package-release.mjs
+
+      - name: Verify packaged site exists
+        run: |
+          if [ ! -f th11_web/artifacts/sdl-release/site/index.html ]; then
+            echo "Expected packaged site at th11_web/artifacts/sdl-release/site/index.html but it was not found."
+            ls -la th11_web/artifacts || true
+            ls -la th11_web/artifacts/sdl-release || true
             exit 1
           fi
-          echo "Static site found at th11_web/launcher/public"
+          echo "Packaged static site found at th11_web/artifacts/sdl-release/site"
 
       - name: Upload Compiled Game Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'th11_web/launcher/public'
+          path: 'th11_web/artifacts/sdl-release/site'
 
       - name: Deploy to GitHub Pages
         id: deployment
