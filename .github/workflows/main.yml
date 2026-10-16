@@ -13,6 +13,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      # Public fallback URL you supplied; used only if the secret is not defined.
+      PUBLIC_GAME_DATA_URL: 'https://drive.google.com/uc?export=download&id=124_i00KICE-l_YGOFQx8Rmo5Te4zhJ70'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -32,19 +35,23 @@ jobs:
         shell: bash
 
       - name: Build release site (install env, download game data, build)
-        env:
-          GAME_DATA_URL: ${{ secrets.GAME_DATA_URL }}
         run: |
           set -eux
+
+          # Prefer the repository secret if present; otherwise fall back to the public URL.
+          GAME_DATA_URL='${{ secrets.GAME_DATA_URL }}'
+          if [ -z "$GAME_DATA_URL" ]; then
+            echo "GAME_DATA_URL secret not set; falling back to PUBLIC_GAME_DATA_URL"
+            GAME_DATA_URL="$PUBLIC_GAME_DATA_URL"
+          else
+            echo "Using GAME_DATA_URL from repository secret"
+          fi
+
           # source emsdk environment for this shell
           source tools/emsdk/emsdk_env.sh || true
 
           # Fetch and extract the provided game-data zip into the workspace root
-          if [ -z "$GAME_DATA_URL" ]; then
-            echo "GAME_DATA_URL secret is not set" >&2
-            exit 1
-          fi
-          echo "Downloading game data from provided URL..."
+          echo "Downloading game data from: $GAME_DATA_URL"
           curl -L --fail -o game-data.zip "$GAME_DATA_URL"
           echo "Extracting game data (this will place files into the repository workspace)..."
           unzip -o game-data.zip -d .
