@@ -2,6 +2,7 @@ name: Compile and Deploy Touhou 11
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: {}
 permissions:
   contents: read
   pages: write
@@ -21,10 +22,47 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Build release site
+      - name: Install Emscripten SDK
         run: |
+          set -eux
+          git clone https://github.com/emscripten-core/emsdk.git tools/emsdk
+          cd tools/emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+        shell: bash
+
+      - name: Build release site (install env, download game data, build)
+        env:
+          GAME_DATA_URL: ${{ secrets.GAME_DATA_URL }}
+        run: |
+          set -eux
+          # source emsdk environment for this shell
+          source tools/emsdk/emsdk_env.sh || true
+
+          # Fetch and extract the provided game-data zip into the workspace root
+          if [ -z "$GAME_DATA_URL" ]; then
+            echo "GAME_DATA_URL secret is not set" >&2
+            exit 1
+          fi
+          echo "Downloading game data from provided URL..."
+          curl -L --fail -o game-data.zip "$GAME_DATA_URL"
+          echo "Extracting game data (this will place files into the repository workspace)..."
+          unzip -o game-data.zip -d .
+
+          # Verify expected th11.dat location
+          EXPECTED_PATH='[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'
+          if [ ! -f "$EXPECTED_PATH" ]; then
+            echo "Expected game data not found at: $EXPECTED_PATH" >&2
+            echo "Listing current directory for debugging:"
+            ls -la || true
+            ls -la "[th11] 东方地灵殿 (汉化版+日文版)" || true
+            exit 1
+          fi
+
+          # Run the game build and packaging
           node th11_web/scripts/build-sdl.mjs --release
           node th11_web/scripts/package-release.mjs
+        shell: bash
 
       - name: Verify packaged site exists
         run: |
