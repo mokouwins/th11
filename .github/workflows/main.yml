@@ -68,6 +68,22 @@ jobs:
             fi
           fi
 
+          echo "Download completed. Diagnostic information for game-data.zip:"
+          ls -la game-data.zip || true
+          # Report file type to see if it's an HTML page or ZIP
+          if command -v file >/dev/null 2>&1; then
+            file game-data.zip || true
+          fi
+          echo "First 512 bytes (hex):"
+          hexdump -C -n 512 game-data.zip || true
+          echo "Strings (first 200 chars) to detect HTML content:"
+          strings -n 5 game-data.zip | sed -n '1,40p' || true
+          if [ -f "$TMPDIR/intermezzo.html" ]; then
+            echo "---- intermezzo.html (first 200 lines) ----"
+            sed -n '1,200p' "$TMPDIR/intermezzo.html" || true
+            echo "---- end intermezzo.html ----"
+          fi
+
           echo "Extracting game data (this will place files into the repository workspace)..."
           unzip -o game-data.zip -d . || true
 
