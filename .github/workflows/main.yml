@@ -87,6 +87,8 @@ jobs:
           echo "Extracting game data (this will place files into the repository workspace)..."
           unzip -o game-data.zip -d . || true
           FOUND=$(find . -type f -iname 'th11.dat' -print -quit || true) if [ -n "$FOUND" ]; then echo "Found th11.dat at: $FOUND" mkdir -p '[th11] 东方地灵殿 (汉化版+日文版)' mv -f -- "$FOUND" '[th11] 东方地灵殿 (汉化版+日文版)/th11.dat' else echo "No th11.dat found after extraction" fi
+
+
           # Verify expected th11.dat location
           EXPECTED_PATH='[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'
           if [ ! -f "$EXPECTED_PATH" ]; then
