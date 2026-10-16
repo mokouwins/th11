@@ -14,7 +14,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     env:
-      # Public fallback URL you supplied; used only if the secret is not defined.
       PUBLIC_GAME_DATA_URL: 'https://drive.google.com/uc?export=download&id=124_i00KICE-l_YGOFQx8Rmo5Te4zhJ70'
     steps:
       - name: Checkout Code
@@ -50,11 +49,27 @@ jobs:
           # source emsdk environment for this shell
           source tools/emsdk/emsdk_env.sh || true
 
-          # Fetch and extract the provided game-data zip into the workspace root
+          # Download Google Drive file robustly (handles large-file confirmation tokens)
           echo "Downloading game data from: $GAME_DATA_URL"
-          curl -L --fail -o game-data.zip "$GAME_DATA_URL"
+          TMPDIR=$(mktemp -d)
+          FILEID=$(echo "$GAME_DATA_URL" | sed -n 's/.*[?&]id=\([^&]*\).*/\1/p')
+          if [ -z "$FILEID" ]; then
+            # If URL does not include id=, try to use the full URL directly
+            curl -L --fail -o game-data.zip "$GAME_DATA_URL"
+          else
+            # First fetch to get confirm token if required
+            curl -c "$TMPDIR/cookies" -s -L "https://drive.google.com/uc?export=download&id=${FILEID}" > "$TMPDIR/intermezzo.html" || true
+            confirm=$(grep -o 'confirm=[0-9A-Za-z_-]\+' "$TMPDIR/intermezzo.html" | sed 's/confirm=//' | head -n1 || true)
+            if [ -n "$confirm" ]; then
+              echo "Using confirm token: $confirm"
+              curl -Lb "$TMPDIR/cookies" -L -o game-data.zip "https://drive.google.com/uc?export=download&confirm=${confirm}&id=${FILEID}"
+            else
+              curl -Lb "$TMPDIR/cookies" -L -o game-data.zip "https://drive.google.com/uc?export=download&id=${FILEID}"
+            fi
+          fi
+
           echo "Extracting game data (this will place files into the repository workspace)..."
-          unzip -o game-data.zip -d .
+          unzip -o game-data.zip -d . || true
 
           # Verify expected th11.dat location
           EXPECTED_PATH='[th11] 东方地灵殿 (汉化版+日文版)/th11.dat'
